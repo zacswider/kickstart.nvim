@@ -51,25 +51,52 @@ return {
   },
   {
     "wookayin/semshi",
-     build = ":UpdateRemotePlugins",
-     version = "*",  -- Recommended to use the latest release
-     init = function()  -- example, skip if you're OK with the default config
-       vim.g['semshi#error_sign'] = false
-       vim.g['semshi#filetypes'] = {'python'}
---       vim.g['semshi#excluded_hl_groups'] = {'local'}
-       vim.g['semshi#mark_selected_nodes'] = 1
-       vim.g['semshi#no_default_builtin_highlight'] = true
-       vim.g['semshi#simplify_markup'] = true
-       vim.g['semshi#error_sign'] = true
-       vim.g['semshi#error_sign_delay'] = 1.5
-       vim.g['semshi#always_update_all_highlights'] = true
-       vim.g['semshi#tolerate_syntax_errors'] = true
-       vim.g['semshi#update_delay_factor'] = 0.0001
-       vim.g['semshi#self_to_attribute'] = true
-     end,
-     config = function()
-       -- any config or setup that would need to be done after plugin loading
-     end,
+    build = ":UpdateRemotePlugins",
+    version = "*",
+    init = function()
+      -- Existing Semshi configuration
+      vim.g['semshi#error_sign'] = false
+      vim.g['semshi#filetypes'] = {'python'}
+      
+      -- IMPORTANT: Remove 'local' from the excluded highlight groups
+      vim.g['semshi#excluded_hl_groups'] = {}  -- Empty list means highlight everything
+      
+      vim.g['semshi#mark_selected_nodes'] = 1
+      vim.g['semshi#no_default_builtin_highlight'] = true
+      vim.g['semshi#simplify_markup'] = true
+      vim.g['semshi#error_sign'] = true
+      vim.g['semshi#error_sign_delay'] = 1.5
+      vim.g['semshi#always_update_all_highlights'] = true
+      vim.g['semshi#tolerate_syntax_errors'] = true
+      vim.g['semshi#update_delay_factor'] = 0.0001
+      vim.g['semshi#self_to_attribute'] = true
+    end,
+    config = function()
+      -- Set up a function to apply custom highlights
+      local function CustomSemshiHighlights()
+        vim.api.nvim_set_hl(0, "semshiLocal", { fg = "#32a899" })
+      end
+      
+      -- Apply highlights after Semshi has loaded
+      vim.api.nvim_create_autocmd("FileType", {
+        pattern = "python",
+        callback = function()
+          -- Wait a bit for Semshi to initialize its highlighting
+          vim.defer_fn(CustomSemshiHighlights, 100)
+        end
+      })
+      
+      -- Ensure highlights persist across colorscheme changes
+      vim.api.nvim_create_autocmd("ColorScheme", {
+        pattern = "*",
+        callback = CustomSemshiHighlights
+      })
+      
+      -- Apply immediately if we're already in a Python file
+      if vim.bo.filetype == "python" then
+        vim.defer_fn(CustomSemshiHighlights, 100)
+      end
+    end,
   },
   {
     "rebelot/kanagawa.nvim",
